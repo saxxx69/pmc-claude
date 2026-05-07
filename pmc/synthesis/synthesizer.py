@@ -6,6 +6,7 @@ from typing import Optional
 from pmc.synthesis.prompt import SYNTHESIS_PROMPT
 from pmc.storage.backend import StorageBackend
 from pmc.operations.reasoning import CoverageReport
+from pmc.llm import call_llm, detect_backend, LLMError
 
 
 def _format_assertions(backend: StorageBackend, assertion_ids: list[uuid.UUID]) -> str:
@@ -51,21 +52,21 @@ def synthesize(
         coverage=coverage_txt,
         query=query,
     )
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
+    if detect_backend() == "fallback":
         # Offline fallback: emit a deterministic textual summary directly
         # from the assertion list. No free generation.
         if not assertion_ids:
             return f"[UNKNOWN: no_assertions_for_query: {query}]"
         return _format_assertions(backend, assertion_ids)
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model=model or os.environ.get("PMC_SYNTH_MODEL", "claude-sonnet-4-6"),
+        return call_llm(
+            prompt,
+            model=model or os.environ.get("PMC_SYNTH_MODEL"),
             max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}],
         )
-        return msg.content[0].text  # type: ignore[union-attr]
-    except Exception as e:
-        return f"[UNKNOWN: synthesis_error: {e}]"
+    except LLMError as e:
+        if not assertion_ids:
+            return f"[UNKNOWN: no_assertions_for_query: {query}]"
+        # If the LLM call fails, return the raw assertion list rather than
+        # invented text — the no-hallucination invariant is preserved.
+        return _format_assertions(backend, assertion_ids) + f"\n\n[note: synthesis_unavailable: {e}]"

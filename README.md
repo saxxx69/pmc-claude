@@ -38,6 +38,19 @@ bash install.sh
 The installer creates a venv at `~/.pmc-venv`, installs the `pmc` CLI, and
 symlinks the Claude Code plugin into `~/.claude/plugins/pmc-claude`.
 
+## LLM backend (auto-detected)
+
+PMC works out of the box if **any** of these is true on your machine:
+
+1. The `claude` CLI is installed and signed in → uses your **Claude Code
+   subscription** (no API key needed)
+2. `ANTHROPIC_API_KEY` is exported → uses the Anthropic SDK directly
+3. Neither → fully offline fallback (deterministic stub planner +
+   assertion-list synthesis; useful for tests and CI)
+
+In all three modes, the no-hallucination invariant holds: every output
+claim traces back to a node in `m`.
+
 ## Bootstrap a project
 
 ```bash

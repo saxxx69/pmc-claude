@@ -1,11 +1,11 @@
 from __future__ import annotations
-import json
 import os
 from typing import Optional
 
 from pmc.planner.plan import Plan, Step
 from pmc.planner.few_shot import build_prompt
 from pmc.schema.types import Schema
+from pmc.llm import call_llm, detect_backend, LLMError
 
 
 class PlannerError(Exception):
@@ -13,22 +13,15 @@ class PlannerError(Exception):
 
 
 def _call_claude(prompt: str, model: Optional[str] = None) -> str:
-    """Call Claude API. Falls back to a deterministic stub plan when no
-    ANTHROPIC_API_KEY is configured (offline/test mode)."""
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
+    """Call the unified LLM gateway. Falls back to a deterministic stub plan
+    when no backend is available (offline/test mode)."""
+    if detect_backend() == "fallback":
         return _stub_plan(prompt)
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model=model or os.environ.get("PMC_PLANNER_MODEL", "claude-sonnet-4-6"),
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return msg.content[0].text  # type: ignore[union-attr]
-    except Exception as e:
-        raise PlannerError(f"claude_api_failed: {e}") from e
+        return call_llm(prompt, model=model, max_tokens=2048)
+    except LLMError:
+        # Soft fallback: a stub plan is better than failing the whole query.
+        return _stub_plan(prompt)
 
 
 def _stub_plan(prompt: str) -> str:
