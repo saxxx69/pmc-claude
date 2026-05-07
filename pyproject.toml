@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pmc-claude"
+version = "0.1.0"
+description = "Palace of Computational Memory — graph-grounded retrieval plugin for Claude"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "saxxx69" }]
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.5",
+  "hnswlib>=0.8",
+  "sentence-transformers>=2.2",
+  "typer>=0.9",
+  "anthropic>=0.25",
+  "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-cov", "ruff", "mypy"]
+
+[project.scripts]
+pmc = "pmc.cli.main:app"
+
+[tool.setuptools.packages.find]
+include = ["pmc*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

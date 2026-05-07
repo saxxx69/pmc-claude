@@ -1,0 +1,21 @@
+{
+  "name": "pmc-claude",
+  "version": "0.1.0",
+  "description": "Palace of Computational Memory — graph-grounded retrieval for Claude. Replaces weight-based factual recall with deterministic, traceable graph navigation.",
+  "author": "saxxx69",
+  "homepage": "https://github.com/saxxx69/pmc-claude",
+  "skills": [
+    {"name": "pmc-query", "path": "skills/pmc-query.md"},
+    {"name": "pmc-ingest", "path": "skills/pmc-ingest.md"},
+    {"name": "pmc-plan", "path": "skills/pmc-plan.md"},
+    {"name": "pmc-assert", "path": "skills/pmc-assert.md"},
+    {"name": "pmc-stats", "path": "skills/pmc-stats.md"},
+    {"name": "pmc-bootstrap", "path": "skills/pmc-bootstrap.md"}
+  ],
+  "hooks": {
+    "SessionStart": "hooks/session-start.sh"
+  },
+  "agents": [
+    {"name": "pmc-planner", "path": "agents/pmc-planner.md"}
+  ]
+}

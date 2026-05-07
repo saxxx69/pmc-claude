@@ -1,0 +1,139 @@
+{
+  "schema_id": "pmc-default",
+  "version": "1.0.0",
+  "types": {
+    "ENTITY": {
+      "abstract": true,
+      "properties": {
+        "name": {"type": "string", "required": false}
+      },
+      "relations_out": {
+        "REFERS_TO": {"target_type": "*", "cardinality": "many"}
+      }
+    },
+    "CODE_FILE": {
+      "extends": "ENTITY",
+      "properties": {
+        "path": {"type": "string", "required": true, "unique": true},
+        "module": {"type": "string"},
+        "language": {"type": "enum", "enum_values": ["python", "javascript", "typescript", "bash", "rust", "go", "other"], "required": true},
+        "line_count": {"type": "int"}
+      },
+      "relations_out": {
+        "IMPORTS": {"target_type": "CODE_FILE", "cardinality": "many"},
+        "DEFINES": {"target_type": "FUNCTION", "cardinality": "many"},
+        "DEFINES_CLASS": {"target_type": "CLASS", "cardinality": "many"},
+        "USES_CONFIG": {"target_type": "CONFIG", "cardinality": "many"},
+        "DOCUMENTED_BY": {"target_type": "DOC", "cardinality": "many"}
+      },
+      "freshness": {"half_life": "168h"}
+    },
+    "FUNCTION": {
+      "extends": "ENTITY",
+      "properties": {
+        "name": {"type": "string", "required": true},
+        "signature": {"type": "string"},
+        "is_async": {"type": "bool"}
+      },
+      "relations_out": {
+        "CALLS": {"target_type": "FUNCTION", "cardinality": "many"},
+        "USES": {"target_type": "*", "cardinality": "many"}
+      }
+    },
+    "CLASS": {
+      "extends": "ENTITY",
+      "properties": {
+        "name": {"type": "string", "required": true}
+      },
+      "relations_out": {
+        "INHERITS": {"target_type": "CLASS", "cardinality": "many"},
+        "CONTAINS": {"target_type": "FUNCTION", "cardinality": "many"}
+      }
+    },
+    "CONFIG": {
+      "extends": "ENTITY",
+      "properties": {
+        "path": {"type": "string", "required": true},
+        "key": {"type": "string"},
+        "value": {"type": "string"},
+        "system": {"type": "string"}
+      },
+      "relations_out": {
+        "GOVERNS": {"target_type": "CODE_FILE", "cardinality": "many"}
+      },
+      "freshness": {"half_life": "24h"}
+    },
+    "DOC": {
+      "extends": "ENTITY",
+      "properties": {
+        "path": {"type": "string", "required": true},
+        "title": {"type": "string"},
+        "topic": {"type": "string"}
+      },
+      "relations_out": {
+        "DOCUMENTS": {"target_type": "*", "cardinality": "many"}
+      }
+    },
+    "RULE": {
+      "extends": "ENTITY",
+      "properties": {
+        "name": {"type": "string", "required": true},
+        "threshold": {"type": "float"},
+        "hard_constraint": {"type": "bool"}
+      },
+      "relations_out": {
+        "CONSTRAINS": {"target_type": "*", "cardinality": "many"},
+        "ENFORCED_BY": {"target_type": "CODE_FILE", "cardinality": "many"}
+      }
+    },
+    "METRIC": {
+      "extends": "ENTITY",
+      "properties": {
+        "name": {"type": "string", "required": true},
+        "value": {"type": "float"},
+        "timestamp": {"type": "timestamp"},
+        "system": {"type": "string"}
+      },
+      "relations_out": {
+        "MEASURED_BY": {"target_type": "CODE_FILE", "cardinality": "many"},
+        "VIOLATES": {"target_type": "RULE", "cardinality": "many"}
+      },
+      "freshness": {"half_life": "1h", "hard_ttl": "24h"}
+    },
+    "FACT": {
+      "extends": "ENTITY",
+      "properties": {
+        "statement": {"type": "string", "required": true},
+        "domain": {"type": "string"}
+      },
+      "relations_out": {
+        "DERIVED_FROM": {"target_type": "*", "cardinality": "many"}
+      }
+    }
+  },
+  "inference_rules": [
+    {
+      "rule_id": "transitive_imports",
+      "name": "Transitive imports",
+      "pattern": [
+        {"from": "A", "rel": "IMPORTS", "to": "B"},
+        {"from": "B", "rel": "IMPORTS", "to": "C"}
+      ],
+      "conclusion": {"from": "A", "rel": "TRANSITIVELY_DEPENDS_ON", "to": "C"},
+      "confidence_fn": "min(conf_edge1, conf_edge2) * 0.9"
+    }
+  ],
+  "conflict_resolution_policy": {
+    "auto_resolve": [
+      "newer_wins_if_same_source",
+      "higher_confidence_wins_if_gap_gt_0.2",
+      "verified_source_wins_over_unverified"
+    ],
+    "manual_review": [
+      "different_sources_equal_confidence",
+      "both_sources_unverified",
+      "type_is_high_stakes"
+    ],
+    "high_stakes_types": ["RULE", "CONFIG", "METRIC"]
+  }
+}
