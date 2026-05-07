@@ -69,7 +69,7 @@ def contradict(backend: StorageBackend, node_a: uuid.UUID, node_b: uuid.UUID) ->
 
 
 def check_coverage(
-    backend: StorageBackend, hnsw, embedder, topic: str, k: int = 20, threshold: float = 0.5
+    backend: StorageBackend, hnsw, embedder, topic: str, k: int = 20, threshold: float = 0.3
 ) -> CoverageReport:
     from pmc.operations.retrieval import select_approx
     hits = select_approx(backend, hnsw, embedder, topic, k=k, threshold=threshold)

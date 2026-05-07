@@ -13,7 +13,7 @@ FEW_SHOT_EXAMPLES: list[dict] = [
             intent="retrieval",
             steps=[
                 Step(step_id="s1", op="SELECT_APPROX",
-                     args={"query": "shadow_engine", "type_filter": "CODE_FILE", "k": 1, "threshold": 0.5},
+                     args={"query": "shadow_engine", "type_filter": "CODE_FILE", "k": 1, "threshold": 0.35},
                      output_binding="$n", expected_type="(NodeID,score)[]"),
                 Step(step_id="s2", op="ASSERT",
                      args={"claim": "shadow_engine path", "sources": "$n", "confidence_threshold": 0.7},
@@ -29,7 +29,7 @@ FEW_SHOT_EXAMPLES: list[dict] = [
             intent="retrieval",
             steps=[
                 Step(step_id="s1", op="SELECT_APPROX",
-                     args={"query": "shadow_engine", "type_filter": "CODE_FILE", "k": 1, "threshold": 0.5},
+                     args={"query": "shadow_engine", "type_filter": "CODE_FILE", "k": 1, "threshold": 0.35},
                      output_binding="$f", expected_type="(NodeID,score)[]"),
                 Step(step_id="s2", op="TRAVERSE",
                      args={"node": "$f", "rel": "DEFINES", "direction": "out"},
@@ -48,7 +48,7 @@ FEW_SHOT_EXAMPLES: list[dict] = [
             intent="retrieval",
             steps=[
                 Step(step_id="s1", op="SELECT_APPROX",
-                     args={"query": "risk threshold config", "type_filter": "CONFIG", "k": 5, "threshold": 0.5},
+                     args={"query": "risk threshold config", "type_filter": "CONFIG", "k": 5, "threshold": 0.35},
                      output_binding="$c", expected_type="(NodeID,score)[]",
                      on_empty={"policy": "HALT"}),
                 Step(step_id="s2", op="ASSERT",

@@ -24,7 +24,7 @@ def select_approx(
     query: str,
     type_filter: Optional[str] = None,
     k: int = 10,
-    threshold: float = 0.5,
+    threshold: float = 0.3,
 ) -> list[tuple[Node, float]]:
     vec = embedder.encode(query)
     hits = hnsw.query(vec, k=max(k * 3, k))  # over-fetch for filtering
