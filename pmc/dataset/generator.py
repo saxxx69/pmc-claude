@@ -7,13 +7,13 @@ from pmc.storage.backend import StorageBackend
 from pmc.planner.plan import Plan, Step
 
 
-def _random_walk(backend: StorageBackend, max_hops: int = 3) -> list[uuid.UUID]:
-    nodes = backend.all_nodes()
-    if not nodes:
+def _random_walk(backend: StorageBackend, all_node_ids: list[uuid.UUID],
+                 max_hops: int = 3) -> list[uuid.UUID]:
+    if not all_node_ids:
         return []
-    start = random.choice(nodes)
-    path: list[uuid.UUID] = [start.id]
-    cur = start.id
+    start_id = random.choice(all_node_ids)
+    path: list[uuid.UUID] = [start_id]
+    cur = start_id
     for _ in range(max_hops):
         edges = backend.get_edges_out(cur)
         if not edges:
@@ -72,11 +72,14 @@ def generate_pairs(backend: StorageBackend, n: int = 100,
                    seed: Optional[int] = None) -> list[tuple[str, Plan]]:
     if seed is not None:
         random.seed(seed)
+    # Load node ids ONCE — querying all_nodes per attempt is O(N*M) and
+    # makes generation effectively unbounded for large graphs.
+    all_node_ids = [n_.id for n_ in backend.all_nodes()]
     pairs: list[tuple[str, Plan]] = []
     attempts = 0
     while len(pairs) < n and attempts < n * 10:
         attempts += 1
-        path = _random_walk(backend, max_hops=random.randint(1, 3))
+        path = _random_walk(backend, all_node_ids, max_hops=random.randint(1, 3))
         if not path:
             break
         try:
