@@ -30,10 +30,7 @@ if [ -f "$VENV/bin/activate" ]; then
   source "$VENV/bin/activate"
 fi
 
-echo "[PMC] ingesting $PROJECT -> $DB"
-pmc ingest "$PROJECT" --db "$DB" --schema "$SCHEMA"
-
-echo "[PMC] generating $GEN synthetic (query, plan) pairs"
+echo "[PMC] ingesting $PROJECT -> $DB and generating $GEN synthetic pairs"
 pmc bootstrap "$PROJECT" --db "$DB" --schema "$SCHEMA" --gen-dataset "$GEN" --out-dir "$DATASET_DIR"
 
 echo "[PMC] appending CLAUDE.md addon"
