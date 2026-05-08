@@ -69,9 +69,9 @@ def query(
         typer.echo(json.dumps(out, indent=2, default=str))
     else:
         typer.echo(res.text)
-        if res.vector_fallback_text:
+        if getattr(res, 'vector_fallback_text', None):
             typer.echo("\n" + res.vector_fallback_text)
-        if res.self_healing_promoted:
+        if getattr(res, 'self_healing_promoted', None):
             typer.echo(f"\n[self-healing: {res.self_healing_promoted} node(s) promoted to graph]")
         if show_plan and res.plan_id:
             typer.echo(f"\n--- plan_id: {res.plan_id}")
