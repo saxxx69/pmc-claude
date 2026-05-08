@@ -124,8 +124,15 @@ def ingest_filesystem(
     file_node_by_path: dict[str, uuid.UUID] = {}
     py_imports: list[tuple[uuid.UUID, list[str]]] = []
 
+    # Support single-file ingest (hook passes individual file paths)
+    def _files():
+        if rootp.is_file():
+            yield rootp
+        else:
+            yield from _walk(rootp)
+
     # Pass 1: create file/doc/config nodes
-    for fp in _walk(rootp):
+    for fp in _files():
         ext = fp.suffix.lower()
         if ext not in EXT_MAP:
             continue
