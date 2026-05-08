@@ -13,9 +13,7 @@
     {"name": "pmc-bootstrap", "path": "skills/pmc-bootstrap.md"}
   ],
   "hooks": {
-    "SessionStart": "hooks/session-start.sh",
-    "PostToolUse":  "hooks/pmc-conversation-ingest.sh",
-    "UserPromptSubmit": "hooks/pmc-user-prompt.sh"
+    "SessionStart": "hooks/session-start.sh"
   },
   "agents": [
     {"name": "pmc-planner", "path": "agents/pmc-planner.md"}

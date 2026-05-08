@@ -109,38 +109,6 @@
       "relations_out": {
         "DERIVED_FROM": {"target_type": "*", "cardinality": "many"}
       }
-    },
-    "SESSION": {
-      "extends": "ENTITY",
-      "description": "A single Claude Code session. Groups all CONVERSATION_TURNs that happened within it.",
-      "properties": {
-        "session_id":  {"type": "string", "required": true, "unique": true},
-        "started_at":  {"type": "timestamp"},
-        "project":     {"type": "string"},
-        "description": {"type": "string"}
-      },
-      "relations_out": {
-        "CONTAINS": {"target_type": "CONVERSATION_TURN", "cardinality": "many"}
-      },
-      "freshness": {"half_life": "720h"}
-    },
-    "CONVERSATION_TURN": {
-      "extends": "ENTITY",
-      "description": "A single user or assistant message inside a SESSION. Forms a linked list via FOLLOWS edges and cross-links to codebase nodes via REFERENCES.",
-      "properties": {
-        "session_id":  {"type": "string", "required": true},
-        "turn_index":  {"type": "int",    "required": true},
-        "role":        {"type": "enum",   "enum_values": ["user", "assistant"], "required": true},
-        "text":        {"type": "string", "required": true},
-        "timestamp":   {"type": "timestamp"},
-        "token_count": {"type": "int"}
-      },
-      "relations_out": {
-        "FOLLOWS":    {"target_type": "CONVERSATION_TURN", "cardinality": "one",  "description": "Points to the immediately preceding turn"},
-        "REFERENCES": {"target_type": "*",                 "cardinality": "many", "description": "Codebase nodes (files, functions, configs) mentioned in this turn"},
-        "PART_OF":    {"target_type": "SESSION",           "cardinality": "one",  "description": "The session this turn belongs to"}
-      },
-      "freshness": {"half_life": "168h"}
     }
   },
   "inference_rules": [
