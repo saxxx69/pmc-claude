@@ -16,6 +16,7 @@ from pmc.models import (
 from pmc.storage.backend import StorageBackend
 from pmc.storage.hnsw_index import HNSWIndex
 from pmc.embeddings.embedder import Embedder
+from pmc.operations.semantic_linking import link_to_neighbors
 
 
 # extension → (TypeID, ContentFormat)
@@ -183,6 +184,7 @@ def ingest_filesystem(
             last_verified=_now(),
         ))
         hnsw.add(node.id, emb)
+        report.edges_created += link_to_neighbors(node.id, emb, backend, hnsw, run_id=report.pipeline_run_id)
         file_node_by_path[rel_path] = node.id
         report.nodes_created += 1
 
@@ -207,6 +209,7 @@ def ingest_filesystem(
                 )
                 backend.insert_node(f_node)
                 hnsw.add(f_node.id, f_emb)
+                report.edges_created += link_to_neighbors(f_node.id, f_emb, backend, hnsw, run_id=report.pipeline_run_id)
                 edge_prov = _make_provenance(f"{fp}#defines#{fname}", report.pipeline_run_id)
                 backend.insert_provenance(edge_prov)
                 backend.insert_edge(Edge(
