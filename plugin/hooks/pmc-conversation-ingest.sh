@@ -115,14 +115,6 @@ if [ "$transcript_size" -gt "$TRANSCRIPT_LIMIT_BYTES" ]; then
         --project "${PMC_PROJECT:-}" \
         2>/dev/null || true
 
-    # Find current tmux pane and send /clear + resume directly
-    tmux_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || echo "")
-    if [ -z "$tmux_pane" ]; then
-        # Fallback: find pane running claude or node
-        tmux_pane=$(tmux list-panes -a -F '#{pane_id} #{pane_current_command}' 2>/dev/null \
-            | grep -iE "claude|node" | head -1 | awk '{print $1}')
-    fi
-
     # Cooldown: don't trigger twice in the same session
     COOLDOWN_FILE="/tmp/pmc-autoclear-${session_id}.lock"
     if [ -f "$COOLDOWN_FILE" ]; then
