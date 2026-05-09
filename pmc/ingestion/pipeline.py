@@ -47,7 +47,8 @@ LANG_MAP = {
 }
 
 IGNORE_DIRS = {".git", "__pycache__", "node_modules", "venv", ".venv",
-               ".pmc", "dist", "build", ".pytest_cache", ".mypy_cache"}
+               ".pmc", "dist", "build", ".pytest_cache", ".mypy_cache",
+               "backups", "test_reports", ".next", "coverage", "htmlcov"}
 
 
 @dataclass
