@@ -13,8 +13,8 @@ if [ -z "${PMC_DB:-}" ] || [ ! -f "$PMC_DB" ]; then
     exit 0
 fi
 
-# ── Context threshold (bytes): 1.5MB ≈ 80% of 200k token context window ─────
-TRANSCRIPT_LIMIT_BYTES="${PMC_TRANSCRIPT_LIMIT:-1572864}"
+# ── Context threshold (bytes): 600KB ≈ 80% of 200k token context window ──────
+TRANSCRIPT_LIMIT_BYTES="${PMC_TRANSCRIPT_LIMIT:-614400}"
 
 input=$(cat)
 
@@ -123,11 +123,24 @@ if [ "$transcript_size" -gt "$TRANSCRIPT_LIMIT_BYTES" ]; then
             | grep -iE "claude|node" | head -1 | awk '{print $1}')
     fi
 
-    if [ -n "$tmux_pane" ]; then
-        sleep 1
-        tmux send-keys -t "$tmux_pane" "/clear" "Enter"
-        sleep 3
-        tmux send-keys -t "$tmux_pane" "[PMC AUTO-RESUME] Continua dalla sessione precedente — checkpoint caricato da PMC." "Enter"
+    # Cooldown: don't trigger twice in the same session
+    COOLDOWN_FILE="/tmp/pmc-autoclear-${session_id}.lock"
+    if [ -f "$COOLDOWN_FILE" ]; then
+        exit 0
+    fi
+    touch "$COOLDOWN_FILE"
+
+    # Find Claude Code's PTY — look for the `claude` binary (exact match), not node
+    CLAUDE_PID=$(pgrep -x "claude" 2>/dev/null | grep -v $$ | head -1)
+
+    if [ -n "$CLAUDE_PID" ]; then
+        CLAUDE_PTY=$(readlink /proc/"$CLAUDE_PID"/fd/1 2>/dev/null || echo "")
+        if [[ "$CLAUDE_PTY" == /dev/pts/* ]]; then
+            sleep 1
+            printf "/clear\n" > "$CLAUDE_PTY"
+            sleep 3
+            printf "[PMC AUTO-RESUME] Continua dalla sessione precedente — checkpoint caricato da PMC.\n" > "$CLAUDE_PTY"
+        fi
     fi
 fi
 
