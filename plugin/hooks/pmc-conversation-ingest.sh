@@ -107,7 +107,7 @@ fi
 transcript_size=$(stat -c%s "$transcript_path" 2>/dev/null || echo 0)
 
 if [ "$transcript_size" -gt "$TRANSCRIPT_LIMIT_BYTES" ]; then
-    # Save checkpoint first (synchronous — must complete before restart)
+    # Save checkpoint (synchronous)
     pmc checkpoint \
         --db "$PMC_DB" \
         --schema "${PMC_SCHEMA:-default}" \
@@ -115,11 +115,20 @@ if [ "$transcript_size" -gt "$TRANSCRIPT_LIMIT_BYTES" ]; then
         --project "${PMC_PROJECT:-}" \
         2>/dev/null || true
 
-    # Capture tmux pane ID (this hook runs inside the Claude pane)
+    # Find current tmux pane and send /clear + resume directly
     tmux_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || echo "")
+    if [ -z "$tmux_pane" ]; then
+        # Fallback: find pane running claude or node
+        tmux_pane=$(tmux list-panes -a -F '#{pane_id} #{pane_current_command}' 2>/dev/null \
+            | grep -iE "claude|node" | head -1 | awk '{print $1}')
+    fi
 
-    # Write signal for pmc-session-monitor
-    echo "${tmux_pane}|${session_id}" > /tmp/pmc-restart-needed
+    if [ -n "$tmux_pane" ]; then
+        sleep 1
+        tmux send-keys -t "$tmux_pane" "/clear" "Enter"
+        sleep 3
+        tmux send-keys -t "$tmux_pane" "[PMC AUTO-RESUME] Continua dalla sessione precedente — checkpoint caricato da PMC." "Enter"
+    fi
 fi
 
 exit 0
