@@ -219,6 +219,115 @@ def converse_ingest(
     m.close()
 
 
+@app.command("checkpoint")
+def checkpoint(
+    session_id: str = typer.Option(..., "--session-id"),
+    db:         str = typer.Option(None, "--db"),
+    schema:     str = typer.Option("default", "--schema"),
+    project:    str = typer.Option("", "--project"),
+    max_turns:  int = typer.Option(20, "--max-turns", help="Max recent turns to summarise"),
+):
+    """
+    Save a CHECKPOINT node for the current session to PMC.
+
+    Called by the Stop hook when the transcript reaches 80% context.
+    The checkpoint contains a compressed summary of recent turns so
+    the next session can resume without loss after /clear.
+    """
+    import uuid
+    from datetime import datetime, timezone
+    from pmc.models import Node, UncertaintyRecord
+
+    db = db or os.environ.get("PMC_DB", "./.pmc/m.db")
+    m = _open_memory(db, schema)
+
+    now = datetime.now(timezone.utc)
+
+    # Pull recent CONVERSATION_TURN nodes for this session
+    rows = m.backend.conn.execute(
+        "SELECT properties FROM nodes "
+        "WHERE type_id='CONVERSATION_TURN' "
+        "AND json_extract(properties,'$.session_id')=? "
+        "ORDER BY created_at DESC LIMIT ?",
+        (session_id, max_turns * 2),
+    ).fetchall()
+
+    turns = []
+    for (props,) in reversed(rows):
+        p = json.loads(props) if isinstance(props, str) else props
+        role = p.get("role", "?")
+        text = p.get("text", "")[:800]
+        turns.append(f"[{role}] {text}")
+
+    summary = "\n---\n".join(turns) if turns else "(no turns recorded)"
+    summary_short = summary[:4000]
+
+    emb = m.embedder.encode(f"CHECKPOINT session={session_id} {summary_short[:200]}")
+
+    node = Node(
+        id=uuid.uuid4(),
+        type_id="CHECKPOINT",
+        label=f"checkpoint-{session_id[:8]}",
+        embedding=emb,
+        properties={
+            "session_id": session_id,
+            "project": project,
+            "turn_count": len(rows),
+            "summary": summary_short,
+            "created_at": now.isoformat(),
+        },
+        confidence=1.0,
+        created_at=now, updated_at=now,
+    )
+    m.backend.insert_node(node)
+    m.backend.upsert_uncertainty(UncertaintyRecord(
+        node_id=node.id, confidence=1.0, coverage=1.0, freshness_score=1.0,
+        last_verified=now,
+    ))
+    m.close()
+
+    typer.echo(json.dumps({
+        "checkpoint_id": str(node.id),
+        "session_id": session_id,
+        "turn_count": len(rows),
+        "summary_chars": len(summary_short),
+    }))
+
+
+@app.command("checkpoint-context")
+def checkpoint_context(
+    db:      str = typer.Option(None, "--db"),
+    schema:  str = typer.Option("default", "--schema"),
+    max_age: int = typer.Option(600, "--max-age", help="Max seconds since checkpoint"),
+):
+    """
+    Return the most recent CHECKPOINT summary if one exists within max_age seconds.
+
+    Called by UserPromptSubmit hook at session start to detect and inject
+    context after an auto-clear.
+    """
+    db = db or os.environ.get("PMC_DB", "./.pmc/m.db")
+    m = _open_memory(db, schema)
+
+    from datetime import datetime, timezone, timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=max_age)).isoformat()
+
+    rows = m.backend.conn.execute(
+        "SELECT properties FROM nodes WHERE type_id='CHECKPOINT' "
+        "AND json_extract(properties,'$.created_at') >= ? "
+        "ORDER BY created_at DESC LIMIT 1",
+        (cutoff,),
+    ).fetchall()
+
+    m.close()
+
+    if not rows:
+        sys.exit(1)
+
+    props = json.loads(rows[0][0]) if isinstance(rows[0][0], str) else rows[0][0]
+    typer.echo(props.get("summary", ""))
+
+
 @app.command("conversation-context")
 def conversation_context(
     query:      str = typer.Argument(...,              help="The current user prompt"),
