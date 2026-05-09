@@ -236,7 +236,7 @@ def checkpoint(
     """
     import uuid
     from datetime import datetime, timezone
-    from pmc.models import Node, UncertaintyRecord
+    from pmc.models import Node, UncertaintyRecord, ProvenanceRecord, SourceType, TrustLevel
 
     db = db or os.environ.get("PMC_DB", "./.pmc/m.db")
     m = _open_memory(db, schema)
@@ -264,6 +264,17 @@ def checkpoint(
 
     emb = m.embedder.encode(f"CHECKPOINT session={session_id} {summary_short[:200]}")
 
+    prov = ProvenanceRecord(
+        id=uuid.uuid4(),
+        source_type=SourceType.HUMAN,
+        source_uri=f"checkpoint:{session_id}",
+        extracted_by="pmc.cli.checkpoint",
+        extracted_at=now,
+        pipeline_run_id=uuid.uuid4(),
+        trust_level=TrustLevel.TRUSTED,
+    )
+    m.backend.insert_provenance(prov)
+
     node = Node(
         id=uuid.uuid4(),
         type_id="CHECKPOINT",
@@ -278,6 +289,7 @@ def checkpoint(
         },
         confidence=1.0,
         created_at=now, updated_at=now,
+        provenance_id=prov.id,
     )
     m.backend.insert_node(node)
     m.backend.upsert_uncertainty(UncertaintyRecord(
