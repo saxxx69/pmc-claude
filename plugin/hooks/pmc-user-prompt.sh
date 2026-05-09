@@ -53,6 +53,13 @@ fi
 
 SESSION_ID="${CLAUDE_SESSION_ID:-unknown-session}"
 
+# ── block 0: checkpoint recovery (post-auto-clear) ───────────────────────────
+checkpoint_context=$(pmc checkpoint-context \
+    --db "$PMC_DB" \
+    --schema "${PMC_SCHEMA:-default}" \
+    --max-age 120 \
+    2>/dev/null || true)
+
 # ── block 1: PMC graph pre-flight ────────────────────────────────────────────
 graph_result=$(pmc query "$user_prompt" \
     --db "$PMC_DB" \
@@ -80,11 +87,22 @@ if [ -n "$conv_context" ]; then
     has_conv=true
 fi
 
-if ! $has_graph && ! $has_conv; then
+has_checkpoint=false
+if [ -n "$checkpoint_context" ]; then
+    has_checkpoint=true
+fi
+
+if ! $has_graph && ! $has_conv && ! $has_checkpoint; then
     exit 0
 fi
 
 echo "<system-reminder>"
+
+if $has_checkpoint; then
+    echo "[PMC CHECKPOINT RESTORED — previous session context]"
+    echo "$checkpoint_context"
+    echo ""
+fi
 
 if $has_graph; then
     echo "[PMC pre-flight — graph answer]"

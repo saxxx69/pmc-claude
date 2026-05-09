@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# PMC Stop hook — ingest last exchange (user + assistant) into PMC graph
+# PMC Stop hook — ingest last exchange + auto-clear trigger at 80% context
 #
 # Fires after every complete Claude response via the Stop event.
-# Reads the Stop payload (session_id, last_assistant_message, transcript_path)
-# and ingests the last user+assistant turn as CONVERSATION_TURN nodes.
+# 1. Ingests last user+assistant turn as CONVERSATION_TURN nodes.
+# 2. Measures transcript JSONL size as proxy for context usage.
+# 3. At 80% (TRANSCRIPT_LIMIT_BYTES), saves CHECKPOINT to PMC and
+#    writes /tmp/pmc-restart-needed for pmc-session-monitor to act on.
 
 set -e
 
 if [ -z "${PMC_DB:-}" ] || [ ! -f "$PMC_DB" ]; then
     exit 0
 fi
+
+# ── Context threshold (bytes): 1.5MB ≈ 80% of 200k token context window ─────
+TRANSCRIPT_LIMIT_BYTES="${PMC_TRANSCRIPT_LIMIT:-1572864}"
 
 input=$(cat)
 
@@ -40,7 +45,7 @@ except:
     print('')
 " 2>/dev/null)
 
-# Extract last user message from JSONL transcript
+# ── Extract last user message from JSONL transcript ───────────────────────────
 user_text=""
 if [ -f "$transcript_path" ]; then
     user_text=$(python3 << PYEOF
@@ -80,20 +85,41 @@ PYEOF
     )
 fi
 
-# Nothing to ingest
-if [ -z "$assistant_text" ] && [ -z "$user_text" ]; then
+# ── Ingest turn ───────────────────────────────────────────────────────────────
+if [ -n "$assistant_text" ] || [ -n "$user_text" ]; then
+    (
+        pmc converse-ingest \
+            --db "$PMC_DB" \
+            --schema "${PMC_SCHEMA:-default}" \
+            --session-id "$session_id" \
+            --project "${PMC_PROJECT:-}" \
+            --user-text "$user_text" \
+            --assistant-text "$assistant_text" \
+            2>/dev/null
+    ) &
+fi
+
+# ── Context size check ────────────────────────────────────────────────────────
+if [ ! -f "$transcript_path" ]; then
     exit 0
 fi
 
-(
-    pmc converse-ingest \
+transcript_size=$(stat -c%s "$transcript_path" 2>/dev/null || echo 0)
+
+if [ "$transcript_size" -gt "$TRANSCRIPT_LIMIT_BYTES" ]; then
+    # Save checkpoint first (synchronous — must complete before restart)
+    pmc checkpoint \
         --db "$PMC_DB" \
         --schema "${PMC_SCHEMA:-default}" \
         --session-id "$session_id" \
         --project "${PMC_PROJECT:-}" \
-        --user-text "$user_text" \
-        --assistant-text "$assistant_text" \
-        2>/dev/null
-) &
+        2>/dev/null || true
+
+    # Capture tmux pane ID (this hook runs inside the Claude pane)
+    tmux_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || echo "")
+
+    # Write signal for pmc-session-monitor
+    echo "${tmux_pane}|${session_id}" > /tmp/pmc-restart-needed
+fi
 
 exit 0
