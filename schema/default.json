@@ -1,146 +1,663 @@
 {
   "schema_id": "pmc-default",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "types": {
     "ENTITY": {
       "abstract": true,
       "properties": {
-        "name": {"type": "string", "required": false}
+        "name": {
+          "type": "string",
+          "required": false
+        }
       },
       "relations_out": {
-        "REFERS_TO": {"target_type": "*", "cardinality": "many"}
+        "REFERS_TO": {
+          "target_type": "*",
+          "cardinality": "many"
+        }
       }
     },
     "CODE_FILE": {
       "extends": "ENTITY",
       "properties": {
-        "path": {"type": "string", "required": true, "unique": true},
-        "module": {"type": "string"},
-        "language": {"type": "enum", "enum_values": ["python", "javascript", "typescript", "bash", "rust", "go", "other"], "required": true},
-        "line_count": {"type": "int"}
+        "path": {
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        "module": {
+          "type": "string"
+        },
+        "language": {
+          "type": "enum",
+          "enum_values": [
+            "python",
+            "javascript",
+            "typescript",
+            "bash",
+            "rust",
+            "go",
+            "other"
+          ],
+          "required": true
+        },
+        "line_count": {
+          "type": "int"
+        }
       },
       "relations_out": {
-        "IMPORTS": {"target_type": "CODE_FILE", "cardinality": "many"},
-        "DEFINES": {"target_type": "FUNCTION", "cardinality": "many"},
-        "DEFINES_CLASS": {"target_type": "CLASS", "cardinality": "many"},
-        "USES_CONFIG": {"target_type": "CONFIG", "cardinality": "many"},
-        "DOCUMENTED_BY": {"target_type": "DOC", "cardinality": "many"}
+        "IMPORTS": {
+          "target_type": "CODE_FILE",
+          "cardinality": "many"
+        },
+        "DEFINES": {
+          "target_type": "FUNCTION",
+          "cardinality": "many"
+        },
+        "DEFINES_CLASS": {
+          "target_type": "CLASS",
+          "cardinality": "many"
+        },
+        "USES_CONFIG": {
+          "target_type": "CONFIG",
+          "cardinality": "many"
+        },
+        "DOCUMENTED_BY": {
+          "target_type": "DOC",
+          "cardinality": "many"
+        }
       },
-      "freshness": {"half_life": "168h"}
+      "freshness": {
+        "half_life": "168h"
+      }
     },
     "FUNCTION": {
       "extends": "ENTITY",
       "properties": {
-        "name": {"type": "string", "required": true},
-        "signature": {"type": "string"},
-        "is_async": {"type": "bool"}
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "signature": {
+          "type": "string"
+        },
+        "is_async": {
+          "type": "bool"
+        }
       },
       "relations_out": {
-        "CALLS": {"target_type": "FUNCTION", "cardinality": "many"},
-        "USES": {"target_type": "*", "cardinality": "many"}
+        "CALLS": {
+          "target_type": "FUNCTION",
+          "cardinality": "many"
+        },
+        "USES": {
+          "target_type": "*",
+          "cardinality": "many"
+        }
       }
     },
     "CLASS": {
       "extends": "ENTITY",
       "properties": {
-        "name": {"type": "string", "required": true}
+        "name": {
+          "type": "string",
+          "required": true
+        }
       },
       "relations_out": {
-        "INHERITS": {"target_type": "CLASS", "cardinality": "many"},
-        "CONTAINS": {"target_type": "FUNCTION", "cardinality": "many"}
+        "INHERITS": {
+          "target_type": "CLASS",
+          "cardinality": "many"
+        },
+        "CONTAINS": {
+          "target_type": "FUNCTION",
+          "cardinality": "many"
+        }
       }
     },
     "CONFIG": {
       "extends": "ENTITY",
       "properties": {
-        "path": {"type": "string", "required": true},
-        "key": {"type": "string"},
-        "value": {"type": "string"},
-        "system": {"type": "string"}
+        "path": {
+          "type": "string",
+          "required": true
+        },
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        }
       },
       "relations_out": {
-        "GOVERNS": {"target_type": "CODE_FILE", "cardinality": "many"}
+        "GOVERNS": {
+          "target_type": "CODE_FILE",
+          "cardinality": "many"
+        }
       },
-      "freshness": {"half_life": "24h"}
+      "freshness": {
+        "half_life": "24h"
+      }
     },
     "DOC": {
       "extends": "ENTITY",
       "properties": {
-        "path": {"type": "string", "required": true},
-        "title": {"type": "string"},
-        "topic": {"type": "string"}
+        "path": {
+          "type": "string",
+          "required": true
+        },
+        "title": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        }
       },
       "relations_out": {
-        "DOCUMENTS": {"target_type": "*", "cardinality": "many"}
+        "DOCUMENTS": {
+          "target_type": "*",
+          "cardinality": "many"
+        }
       }
     },
     "RULE": {
       "extends": "ENTITY",
       "properties": {
-        "name": {"type": "string", "required": true},
-        "threshold": {"type": "float"},
-        "hard_constraint": {"type": "bool"}
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "threshold": {
+          "type": "float"
+        },
+        "hard_constraint": {
+          "type": "bool"
+        }
       },
       "relations_out": {
-        "CONSTRAINS": {"target_type": "*", "cardinality": "many"},
-        "ENFORCED_BY": {"target_type": "CODE_FILE", "cardinality": "many"}
+        "CONSTRAINS": {
+          "target_type": "*",
+          "cardinality": "many"
+        },
+        "ENFORCED_BY": {
+          "target_type": "CODE_FILE",
+          "cardinality": "many"
+        }
       }
     },
     "METRIC": {
       "extends": "ENTITY",
       "properties": {
-        "name": {"type": "string", "required": true},
-        "value": {"type": "float"},
-        "timestamp": {"type": "timestamp"},
-        "system": {"type": "string"}
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "value": {
+          "type": "float"
+        },
+        "timestamp": {
+          "type": "timestamp"
+        },
+        "system": {
+          "type": "string"
+        }
       },
       "relations_out": {
-        "MEASURED_BY": {"target_type": "CODE_FILE", "cardinality": "many"},
-        "VIOLATES": {"target_type": "RULE", "cardinality": "many"}
+        "MEASURED_BY": {
+          "target_type": "CODE_FILE",
+          "cardinality": "many"
+        },
+        "VIOLATES": {
+          "target_type": "RULE",
+          "cardinality": "many"
+        }
       },
-      "freshness": {"half_life": "1h", "hard_ttl": "24h"}
+      "freshness": {
+        "half_life": "1h",
+        "hard_ttl": "24h"
+      }
     },
     "FACT": {
       "extends": "ENTITY",
       "properties": {
-        "statement": {"type": "string", "required": true},
-        "domain": {"type": "string"}
+        "statement": {
+          "type": "string",
+          "required": true
+        },
+        "domain": {
+          "type": "string"
+        }
       },
       "relations_out": {
-        "DERIVED_FROM": {"target_type": "*", "cardinality": "many"}
+        "DERIVED_FROM": {
+          "target_type": "*",
+          "cardinality": "many"
+        }
       }
     },
     "SESSION": {
       "extends": "ENTITY",
       "description": "A single Claude Code session. Groups all CONVERSATION_TURNs that happened within it.",
       "properties": {
-        "session_id":  {"type": "string", "required": true, "unique": true},
-        "started_at":  {"type": "timestamp"},
-        "project":     {"type": "string"},
-        "description": {"type": "string"}
+        "session_id": {
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        "started_at": {
+          "type": "timestamp"
+        },
+        "project": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
       },
       "relations_out": {
-        "CONTAINS": {"target_type": "CONVERSATION_TURN", "cardinality": "many"}
+        "CONTAINS": {
+          "target_type": "CONVERSATION_TURN",
+          "cardinality": "many"
+        }
       },
-      "freshness": {"half_life": "720h"}
+      "freshness": {
+        "half_life": "720h"
+      }
     },
     "CONVERSATION_TURN": {
       "extends": "ENTITY",
       "description": "A single user or assistant message inside a SESSION. Forms a linked list via FOLLOWS edges and cross-links to codebase nodes via REFERENCES.",
       "properties": {
-        "session_id":  {"type": "string", "required": true},
-        "turn_index":  {"type": "int",    "required": true},
-        "role":        {"type": "enum",   "enum_values": ["user", "assistant"], "required": true},
-        "text":        {"type": "string", "required": true},
-        "timestamp":   {"type": "timestamp"},
-        "token_count": {"type": "int"}
+        "session_id": {
+          "type": "string",
+          "required": true
+        },
+        "turn_index": {
+          "type": "int",
+          "required": true
+        },
+        "role": {
+          "type": "enum",
+          "enum_values": [
+            "user",
+            "assistant"
+          ],
+          "required": true
+        },
+        "text": {
+          "type": "string",
+          "required": true
+        },
+        "timestamp": {
+          "type": "timestamp"
+        },
+        "token_count": {
+          "type": "int"
+        }
       },
       "relations_out": {
-        "FOLLOWS":    {"target_type": "CONVERSATION_TURN", "cardinality": "one",  "description": "Points to the immediately preceding turn"},
-        "REFERENCES": {"target_type": "*",                 "cardinality": "many", "description": "Codebase nodes (files, functions, configs) mentioned in this turn"},
-        "PART_OF":    {"target_type": "SESSION",           "cardinality": "one",  "description": "The session this turn belongs to"}
+        "FOLLOWS": {
+          "target_type": "CONVERSATION_TURN",
+          "cardinality": "one",
+          "description": "Points to the immediately preceding turn"
+        },
+        "REFERENCES": {
+          "target_type": "*",
+          "cardinality": "many",
+          "description": "Codebase nodes (files, functions, configs) mentioned in this turn"
+        },
+        "PART_OF": {
+          "target_type": "SESSION",
+          "cardinality": "one",
+          "description": "The session this turn belongs to"
+        }
       },
-      "freshness": {"half_life": "168h"}
+      "freshness": {
+        "half_life": "168h"
+      }
+    },
+    "CHECKPOINT": {
+      "extends": "ENTITY",
+      "description": "PMC session checkpoint \u2014 stato salvato per recovery dopo /clear.",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        },
+        "summary": {
+          "type": "string",
+          "required": true
+        },
+        "project": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "timestamp"
+        }
+      },
+      "freshness": {
+        "half_life": "720h"
+      }
+    },
+    "EVENT_LOG": {
+      "extends": "ENTITY",
+      "description": "EDCS event \u2014 ogni evento del sistema (tool use, alert, session lifecycle) loggato nel grafo CSLM.",
+      "properties": {
+        "event_type": {
+          "type": "string",
+          "required": true
+        },
+        "source": {
+          "type": "string",
+          "required": true
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "timestamp",
+          "required": true
+        }
+      },
+      "relations_out": {
+        "INTERRUPT_OF": {
+          "target_type": "EVENT_LOG",
+          "cardinality": "one",
+          "description": "L'evento che ha scatenato questo interrupt"
+        }
+      },
+      "freshness": {
+        "half_life": "168h"
+      }
+    },
+    "INTERRUPT_L1": {
+      "extends": "ENTITY",
+      "description": "SIS Level 1 \u2014 hard reflex interrupt. Non negoziabile, blocca immediatamente.",
+      "properties": {
+        "trigger_metric": {
+          "type": "string",
+          "required": true
+        },
+        "trigger_value": {
+          "type": "float",
+          "required": true
+        },
+        "threshold": {
+          "type": "float",
+          "required": true
+        },
+        "action": {
+          "type": "string",
+          "required": true
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "timestamp",
+          "required": true
+        },
+        "resolved": {
+          "type": "bool"
+        }
+      },
+      "relations_out": {
+        "INTERRUPT_OF": {
+          "target_type": "EVENT_LOG",
+          "cardinality": "one",
+          "description": "Evento che ha scatenato questo L1"
+        },
+        "EMITTED_BY": {
+          "target_type": "*",
+          "cardinality": "one",
+          "description": "Subsistema SIS che ha emesso l'interrupt"
+        }
+      },
+      "freshness": {
+        "half_life": "24h"
+      }
+    },
+    "INTERRUPT_L2": {
+      "extends": "ENTITY",
+      "description": "SIS Level 2 \u2014 salience interrupt. Altera priorit\u00e0 routing senza bloccare.",
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "required": true
+        },
+        "salience_score": {
+          "type": "float",
+          "required": true
+        },
+        "action": {
+          "type": "string",
+          "required": true
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "timestamp",
+          "required": true
+        }
+      },
+      "relations_out": {
+        "INTERRUPT_OF": {
+          "target_type": "EVENT_LOG",
+          "cardinality": "one"
+        }
+      },
+      "freshness": {
+        "half_life": "72h"
+      }
+    },
+    "INTERRUPT_L3": {
+      "extends": "ENTITY",
+      "description": "SIS Level 3 \u2014 introspective interrupt. Trigger meta-reasoning su qualit\u00e0 del ragionamento.",
+      "properties": {
+        "monitor": {
+          "type": "string",
+          "required": true
+        },
+        "observation": {
+          "type": "string",
+          "required": true
+        },
+        "action": {
+          "type": "string",
+          "required": true
+        },
+        "arc_triggered": {
+          "type": "bool"
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "timestamp",
+          "required": true
+        }
+      },
+      "freshness": {
+        "half_life": "168h"
+      }
+    },
+    "ARC_CHALLENGE": {
+      "extends": "ENTITY",
+      "description": "ARC challenge a un nodo PMC esistente. Avvia il protocollo di arbitraggio ECL.",
+      "properties": {
+        "target_node_id": {
+          "type": "string",
+          "required": true
+        },
+        "challenge_type": {
+          "type": "enum",
+          "enum_values": [
+            "contradiction",
+            "stale",
+            "low_confidence",
+            "incompleteness"
+          ],
+          "required": true
+        },
+        "evidence": {
+          "type": "string",
+          "required": true
+        },
+        "arc_confidence": {
+          "type": "float",
+          "required": true
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "timestamp",
+          "required": true
+        },
+        "ecl_status": {
+          "type": "enum",
+          "enum_values": [
+            "pending",
+            "arbitrating",
+            "resolved",
+            "deferred"
+          ]
+        }
+      },
+      "relations_out": {
+        "CHALLENGED_BY": {
+          "target_type": "*",
+          "cardinality": "one",
+          "description": "Il nodo PMC che viene sfidato"
+        },
+        "RESOLVED_TO": {
+          "target_type": "ARBITRATION_OUTCOME",
+          "cardinality": "one",
+          "description": "Outcome ECL che ha risolto questo challenge"
+        }
+      },
+      "freshness": {
+        "half_life": "336h"
+      }
+    },
+    "ARC_REVISION": {
+      "extends": "ENTITY",
+      "description": "Revisione proposta da ARC per un nodo PMC \u2014 pu\u00f2 essere promossa da ECL (Override/Merge) o eliminata (Reject).",
+      "properties": {
+        "original_node_id": {
+          "type": "string",
+          "required": true
+        },
+        "proposed_content": {
+          "type": "string",
+          "required": true
+        },
+        "revision_type": {
+          "type": "enum",
+          "enum_values": [
+            "update",
+            "deprecate",
+            "split",
+            "merge"
+          ],
+          "required": true
+        },
+        "arc_confidence": {
+          "type": "float",
+          "required": true
+        },
+        "status": {
+          "type": "enum",
+          "enum_values": [
+            "proposed",
+            "sandbox",
+            "promoted",
+            "rejected"
+          ]
+        },
+        "timestamp": {
+          "type": "timestamp",
+          "required": true
+        }
+      },
+      "relations_out": {
+        "SUPERSEDES": {
+          "target_type": "*",
+          "cardinality": "one",
+          "description": "Nodo che questa revisione intende sostituire"
+        },
+        "SANDBOXED_BY": {
+          "target_type": "*",
+          "cardinality": "one",
+          "description": "Contesto sandbox in cui la revisione \u00e8 isolata"
+        }
+      },
+      "freshness": {
+        "half_life": "336h"
+      }
+    },
+    "ARBITRATION_OUTCOME": {
+      "extends": "ENTITY",
+      "description": "ECL arbitration outcome \u2014 risultato del protocollo di arbitraggio tra PMC e ARC.",
+      "properties": {
+        "outcome": {
+          "type": "enum",
+          "enum_values": [
+            "override",
+            "merge",
+            "fork",
+            "sandbox",
+            "defer"
+          ],
+          "required": true
+        },
+        "challenger_id": {
+          "type": "string",
+          "required": true
+        },
+        "challenged_id": {
+          "type": "string",
+          "required": true
+        },
+        "ecl_confidence": {
+          "type": "float",
+          "required": true
+        },
+        "risk_score": {
+          "type": "float"
+        },
+        "reason": {
+          "type": "string",
+          "required": true
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "timestamp",
+          "required": true
+        },
+        "reeval_after": {
+          "type": "timestamp"
+        }
+      },
+      "relations_out": {
+        "FORKED_FROM": {
+          "target_type": "*",
+          "cardinality": "many",
+          "description": "Nodi originali da cui \u00e8 derivato un Fork"
+        }
+      },
+      "freshness": {
+        "half_life": "720h"
+      }
     }
   },
   "inference_rules": [
@@ -148,10 +665,22 @@
       "rule_id": "transitive_imports",
       "name": "Transitive imports",
       "pattern": [
-        {"from": "A", "rel": "IMPORTS", "to": "B"},
-        {"from": "B", "rel": "IMPORTS", "to": "C"}
+        {
+          "from": "A",
+          "rel": "IMPORTS",
+          "to": "B"
+        },
+        {
+          "from": "B",
+          "rel": "IMPORTS",
+          "to": "C"
+        }
       ],
-      "conclusion": {"from": "A", "rel": "TRANSITIVELY_DEPENDS_ON", "to": "C"},
+      "conclusion": {
+        "from": "A",
+        "rel": "TRANSITIVELY_DEPENDS_ON",
+        "to": "C"
+      },
       "confidence_fn": "min(conf_edge1, conf_edge2) * 0.9"
     }
   ],
@@ -166,6 +695,10 @@
       "both_sources_unverified",
       "type_is_high_stakes"
     ],
-    "high_stakes_types": ["RULE", "CONFIG", "METRIC"]
+    "high_stakes_types": [
+      "RULE",
+      "CONFIG",
+      "METRIC"
+    ]
   }
 }
