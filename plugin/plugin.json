@@ -10,7 +10,8 @@
     {"name": "pmc-plan", "path": "skills/pmc-plan.md"},
     {"name": "pmc-assert", "path": "skills/pmc-assert.md"},
     {"name": "pmc-stats", "path": "skills/pmc-stats.md"},
-    {"name": "pmc-bootstrap", "path": "skills/pmc-bootstrap.md"}
+    {"name": "pmc-bootstrap", "path": "skills/pmc-bootstrap.md"},
+    {"name": "session-retrospective", "path": "skills/session-retrospective.md"}
   ],
   "hooks": {
     "SessionStart": "hooks/session-start.sh",

@@ -31,6 +31,13 @@ if [ -L "$LINK" ] || [ -e "$LINK" ]; then
 fi
 ln -s "$HERE/plugin" "$LINK"
 
+# Install skill symlink into ~/.claude_a/skills (or CLAUDE_CONFIG_DIR/skills)
+CLAUDE_CONFIG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+SKILLS_DIR="$CLAUDE_CONFIG/skills/session-retrospective"
+mkdir -p "$SKILLS_DIR"
+cp "$HERE/plugin/skills/session-retrospective.md" "$SKILLS_DIR/SKILL.md"
+echo "[PMC] skill installed: session-retrospective → $SKILLS_DIR/SKILL.md"
+
 cat <<EOF
 
 [PMC] install complete
