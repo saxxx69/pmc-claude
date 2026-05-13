@@ -58,9 +58,14 @@ class PMCMemory:
         return cls.create(db_path, schema)
 
     def _rehydrate_index(self) -> None:
+        # Fast path: load from persisted index file (skips re-embedding all nodes)
+        if self.hnsw.load():
+            return
+        # Slow path: rebuild from SQLite (first run or index file missing)
         for n in self.backend.all_nodes():
             if n.embedding:
                 self.hnsw.add(n.id, n.embedding)
+        self.hnsw.save()
 
     # -------- ingestion --------
     def ingest(self, source: str, kind: str = "filesystem") -> IngestReport:

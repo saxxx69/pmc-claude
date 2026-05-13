@@ -4,12 +4,16 @@ import uuid
 import json
 from typing import Optional
 
+_RESIZE_FACTOR = 2  # double capacity on overflow
+
 
 class HNSWIndex:
     """Approximate nearest-neighbor index over node embeddings.
 
     Falls back to brute-force cosine similarity when hnswlib is missing,
     so the package can run in minimal environments at the cost of speed.
+
+    Auto-resizes when capacity is exceeded — no manual tuning required.
     """
 
     def __init__(self, dim: int, capacity: int = 10000, persist_path: Optional[str] = None):
@@ -32,6 +36,13 @@ class HNSWIndex:
         except Exception:
             self._index = None
 
+    def _resize(self) -> None:
+        """Double the index capacity in place."""
+        new_capacity = self.capacity * _RESIZE_FACTOR
+        if self._index is not None:
+            self._index.resize_index(new_capacity)
+        self.capacity = new_capacity
+
     def add(self, nid: uuid.UUID, vec: list[float]) -> None:
         key = str(nid)
         if key in self._uuid_to_label:
@@ -41,6 +52,8 @@ class HNSWIndex:
         self._uuid_to_label[key] = label
         self._label_to_uuid[label] = key
         if self._index is not None:
+            if label >= self.capacity:
+                self._resize()
             self._index.add_items([vec], [label])
         else:
             self._fallback_vecs[label] = vec
@@ -79,6 +92,35 @@ class HNSWIndex:
             )
         if self._index is not None:
             self._index.save_index(self.persist_path)
+
+    def load(self) -> bool:
+        """Load index from disk. Returns True if successful, False if files missing."""
+        if not self.persist_path:
+            return False
+        meta_path = self.persist_path + ".meta.json"
+        if not os.path.exists(self.persist_path) or not os.path.exists(meta_path):
+            return False
+        try:
+            with open(meta_path, encoding="utf-8") as f:
+                meta = json.load(f)
+            saved_capacity = meta.get("capacity", self.capacity)
+            # Use the larger of saved capacity and current setting
+            load_capacity = max(saved_capacity, self.capacity)
+            if self._index is not None:
+                import hnswlib
+                self._index = hnswlib.Index(space="cosine", dim=self.dim)
+                self._index.load_index(self.persist_path, max_elements=load_capacity)
+                self._index.set_ef(50)
+                self.capacity = load_capacity
+            self._uuid_to_label = meta["uuid_to_label"]
+            self._label_to_uuid = {int(k): v for k, v in meta.get("label_to_uuid", {}).items()}
+            # Rebuild reverse map if not persisted
+            if not self._label_to_uuid:
+                self._label_to_uuid = {v: k for k, v in self._uuid_to_label.items()}
+            self._next_label = meta.get("next_label", len(self._uuid_to_label))
+            return True
+        except Exception:
+            return False
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
