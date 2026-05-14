@@ -1,6 +1,6 @@
 """
-cslm_reader.py — API per leggere nodi CSLM dal grafo PMC.
-Opposto di cslm_writer.py — query layer thread-safe per la cognitive state navigation.
+pmc_reader.py — API per leggere nodi PMC dal grafo PMC.
+Opposto di pmc_writer.py — query layer thread-safe per la cognitive state navigation.
 """
 from __future__ import annotations
 import sqlite3
@@ -9,9 +9,9 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Any
 
 
-class CSLMReader:
+class PMCReader:
     """
-    Legge nodi e proprietà CSLM dal database PMC.
+    Legge nodi e proprietà PMC dal database PMC.
     Thread-safe: ogni query apre/chiude la connessione.
     """
 
@@ -26,7 +26,7 @@ class CSLMReader:
 
     def get_recent_events(self, limit: int = 50, node_type: Optional[str] = None) -> list[dict]:
         """
-        Ritorna i nodi CSLM recenti, ordinati per created_at DESC.
+        Ritorna i nodi PMC recenti, ordinati per created_at DESC.
         Se node_type è specificato (es. 'EVENT_LOG', 'INTERRUPT_L1'), filtra per tipo.
         """
         try:
@@ -66,7 +66,7 @@ class CSLMReader:
                     })
                 return events
         except Exception as e:
-            return [{'error': f'CSLMReader.get_recent_events failed: {str(e)}'}]
+            return [{'error': f'PMCReader.get_recent_events failed: {str(e)}'}]
 
     def get_active_interrupts(self, min_salience: float = 0.5) -> list[dict]:
         """
@@ -120,7 +120,7 @@ class CSLMReader:
 
                 return interrupts
         except Exception as e:
-            return [{'error': f'CSLMReader.get_active_interrupts failed: {str(e)}'}]
+            return [{'error': f'PMCReader.get_active_interrupts failed: {str(e)}'}]
 
     def get_recent_decisions(self, limit: int = 20) -> list[dict]:
         """
@@ -157,7 +157,7 @@ class CSLMReader:
 
                 return decisions
         except Exception as e:
-            return [{'error': f'CSLMReader.get_recent_decisions failed: {str(e)}'}]
+            return [{'error': f'PMCReader.get_recent_decisions failed: {str(e)}'}]
 
     def get_pattern_frequency(self, hours: int = 24) -> dict:
         """
@@ -190,7 +190,7 @@ class CSLMReader:
                 sorted_patterns = dict(sorted(pattern_counts.items(), key=lambda x: x[1], reverse=True))
                 return sorted_patterns
         except Exception as e:
-            return {'error': f'CSLMReader.get_pattern_frequency failed: {str(e)}'}
+            return {'error': f'PMCReader.get_pattern_frequency failed: {str(e)}'}
 
     def get_summary_stats(self) -> dict:
         """
@@ -224,4 +224,4 @@ class CSLMReader:
                     'top_pattern_count': top_pattern[1],
                 }
         except Exception as e:
-            return {'error': f'CSLMReader.get_summary_stats failed: {str(e)}'}
+            return {'error': f'PMCReader.get_summary_stats failed: {str(e)}'}

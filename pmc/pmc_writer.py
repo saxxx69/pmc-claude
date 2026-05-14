@@ -1,5 +1,5 @@
 """
-cslm_writer.py — API per scrivere nodi CSLM nel grafo PMC.
+pmc_writer.py — API per scrivere nodi PMC nel grafo PMC.
 Usato da EDCS, SIS, ECL, ARC per persistere eventi e decisioni cognitive.
 """
 from __future__ import annotations
@@ -19,9 +19,9 @@ def _uid() -> str:
     return str(uuid.uuid4())
 
 
-class CSLMWriter:
+class PMCWriter:
     """
-    Scrive nodi e archi CSLM nel database PMC.
+    Scrive nodi e archi PMC nel database PMC.
     Thread-safe: ogni write apre/chiude la connessione.
     """
 
@@ -33,10 +33,10 @@ class CSLMWriter:
         con.execute("PRAGMA journal_mode=WAL")
         return con
 
-    def _ensure_cslm_provenance(self, con: sqlite3.Connection) -> str:
-        """Ritorna (o crea) il provenance record per nodi CSLM."""
+    def _ensure_pmc_provenance(self, con: sqlite3.Connection) -> str:
+        """Ritorna (o crea) il provenance record per nodi PMC."""
         row = con.execute(
-            "SELECT id FROM provenance WHERE source_type='cslm_writer' LIMIT 1"
+            "SELECT id FROM provenance WHERE source_type='pmc_writer' LIMIT 1"
         ).fetchone()
         if row:
             return row[0]
@@ -44,7 +44,7 @@ class CSLMWriter:
         con.execute(
             """INSERT INTO provenance
                (id, source_type, source_uri, extracted_by, extracted_at, trust_level)
-               VALUES (?, 'cslm_writer', 'internal://cslm', 'cslm_writer.py', ?, 'high')""",
+               VALUES (?, 'pmc_writer', 'internal://pmc', 'pmc_writer.py', ?, 'high')""",
             (prov_id, _now())
         )
         return prov_id
@@ -56,7 +56,7 @@ class CSLMWriter:
         confidence = properties.get("arc_confidence",
                      properties.get("ecl_confidence", 1.0))
         with self._conn() as con:
-            prov_id = self._ensure_cslm_provenance(con)
+            prov_id = self._ensure_pmc_provenance(con)
             con.execute(
                 """INSERT INTO nodes
                    (id, type_id, label, properties, confidence, version,
@@ -69,7 +69,7 @@ class CSLMWriter:
     def _write_edge(self, source: str, target: str, type_id: str,
                     weight: float = 1.0) -> None:
         with self._conn() as con:
-            prov_id = self._ensure_cslm_provenance(con)
+            prov_id = self._ensure_pmc_provenance(con)
             con.execute(
                 """INSERT INTO edges
                    (id, source, target, type_id, weight, confidence,
@@ -233,10 +233,10 @@ class CSLMWriter:
                 )
 
 
-def get_writer(db_path: Optional[str] = None) -> CSLMWriter:
+def get_writer(db_path: Optional[str] = None) -> PMCWriter:
     """Factory — usa PMC_DB env var se db_path non specificato."""
     import os
     path = db_path or os.environ.get("PMC_DB", "")
     if not path or not Path(path).exists():
         raise RuntimeError(f"PMC_DB non trovato: {path!r}")
-    return CSLMWriter(path)
+    return PMCWriter(path)
